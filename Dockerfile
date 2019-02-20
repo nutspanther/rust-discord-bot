@@ -1,10 +1,17 @@
 FROM rustlang/rust:nightly as build
 
-ADD src /app
+ADD src1 /app
 
 WORKDIR /app
 
-RUN sudo apt-get install libsodium-dev
+RUN apk update \
+&& apk add --no-cache \
+  ca-certificates \
+  ffmpeg \
+  opus \
+  python3 \
+  libsodium-dev \
+\
 
 RUN cargo update
 
