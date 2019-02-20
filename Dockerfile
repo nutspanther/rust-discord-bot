@@ -1,6 +1,4 @@
-FROM liuchong/rustup
-
-RUN rustup default nightly
+FROM rustlang/rust:nightly as build
 
 ADD src /app
 
