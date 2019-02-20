@@ -1,6 +1,6 @@
 FROM rustlang/rust:nightly as build
 
-ADD src1 /app
+ADD . /app
 
 WORKDIR /app
 
