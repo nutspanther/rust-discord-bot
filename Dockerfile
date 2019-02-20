@@ -1,19 +1,8 @@
-FROM rustlang/rust:nightly as build
+FROM rust:1.32
 
-ADD . /app
+WORKDIR /usr/src/myapp
+COPY . .
 
-WORKDIR /app
-
-RUN apk update \
-&& apk add --no-cache \
-  ca-certificates \
-  ffmpeg \
-  opus \
-  python3 \
-  libsodium-dev
-
-RUN cargo update
-
-RUN cargo build
+RUN cargo install --path .
 
 CMD ["cargo","run"]
