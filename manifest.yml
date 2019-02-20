@@ -1,0 +1,6 @@
+---
+applications:
+  - name: discord-rust-bot
+    buildpacks:
+      - https://github.com/atlassian/heroku-buildpack-libsodium
+      - https://github.com/emk/heroku-buildpack-rust
