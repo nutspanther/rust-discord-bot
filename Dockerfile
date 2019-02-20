@@ -10,8 +10,7 @@ RUN apk update \
   ffmpeg \
   opus \
   python3 \
-  libsodium-dev \
-\
+  libsodium-dev
 
 RUN cargo update
 
