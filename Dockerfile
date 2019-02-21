@@ -1,8 +1,10 @@
 FROM ubuntu:14.04
 RUN apt-get update
 
-RUN apt-get update \
- && apt-get install -y libsodium-dev
+RUN apt-get install -y software-properties-common \
+    && bash -c "LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php" \
+    && apt-get update \
+    && apt-get install -y libsodium-dev
 
 FROM rust
 
