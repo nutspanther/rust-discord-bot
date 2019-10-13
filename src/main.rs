@@ -7,7 +7,12 @@
 //! features = ["cache", "framework", "standard_framework", "voice"]
 //! ```
 
-#[macro_use] extern crate serenity;
+#[macro_use]
+extern crate serenity;
+extern crate reqwest;
+extern crate serde;
+extern crate serde_json;
+mod youtube;
 
 use std::{env, sync::Arc};
 
@@ -22,18 +27,19 @@ use serenity::client::bridge::voice::ClientVoiceManager;
 // types. You can read more about it here:
 //
 // <https://github.com/Amanieu/parking_lot#features>
-use serenity::{client::{Context}, prelude::Mutex};
+use serenity::{client::Context, prelude::Mutex};
 
 use serenity::{
-    client::{CACHE, Client, EventHandler},
+    client::{Client, EventHandler, CACHE},
     framework::StandardFramework,
     model::{channel::Message, gateway::Ready, misc::Mentionable},
-    Result as SerenityResult,
-    voice,
+    voice, Result as SerenityResult,
 };
 
 // This imports `typemap`'s `Key` as `TypeMapKey`.
 use serenity::prelude::*;
+
+use youtube::SearchResult;
 
 struct VoiceManager;
 
@@ -51,9 +57,11 @@ impl EventHandler for Handler {
 
 fn main() {
     // Configure the client with your Discord bot token in the environment.
-    env::set_var("DISCORD_TOKEN", "NDM1NTAzMjU5NjA4ODA5NDgy.DbaApw.DyqYO6HL2s6N8niA332g7ji2sW8");
-    let token = env::var("DISCORD_TOKEN")
-        .expect("Expected a token in the environment");
+    env::set_var(
+        "DISCORD_TOKEN",
+        "NDM1NTAzMjU5NjA4ODA5NDgy.DbaApw.DyqYO6HL2s6N8niA332g7ji2sW8",
+    );
+    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
     let mut client = Client::new(&token, Handler).expect("Err creating client");
 
     // Obtain a lock to the data owned by the client, and insert the client's
@@ -64,20 +72,22 @@ fn main() {
         data.insert::<VoiceManager>(Arc::clone(&client.voice_manager));
     }
 
-    client.with_framework(StandardFramework::new()
-        .configure(|c| c
-            .prefix("/")
-            .on_mention(true))
-        .cmd("deafen", deafen)
-        .cmd("join", join)
-        .cmd("leave", leave)
-        .cmd("mute", mute)
-        .cmd("play", play)
-        .cmd("ping", ping)
-        .cmd("undeafen", undeafen)
-        .cmd("unmute", unmute));
+    client.with_framework(
+        StandardFramework::new()
+            .configure(|c| c.prefix("/").on_mention(true))
+            .cmd("deafen", deafen)
+            .cmd("join", join)
+            .cmd("leave", leave)
+            .cmd("mute", mute)
+            .cmd("play", play)
+            .cmd("ping", ping)
+            .cmd("undeafen", undeafen)
+            .cmd("unmute", unmute),
+    );
 
-    let _ = client.start().map_err(|why| println!("Client ended: {:?}", why));
+    let _ = client
+        .start()
+        .map_err(|why| println!("Client ended: {:?}", why));
 }
 
 command!(deafen(ctx, msg) {
@@ -207,7 +217,7 @@ command!(ping(_context, msg) {
 });
 
 command!(play(ctx, msg, args) {
-    let url = match args.single::<String>() {
+    let mut url = match args.single::<String>() {
         Ok(url) => url,
         Err(_) => {
             check_msg(msg.channel_id.say("Must provide a URL to a video or audio"));
@@ -217,9 +227,10 @@ command!(play(ctx, msg, args) {
     };
 
     if !url.starts_with("http") {
-        check_msg(msg.channel_id.say("Must provide a valid URL"));
-
-        return Ok(());
+//        check_msg(msg.channel_id.say("Must provide a valid URL"));
+        let search_string = format!("https://www.googleapis.com/youtube/v3/search?part=snippet&q={}&key=AIzaSyAa8yy0GdcGPHdtD083HiGGx_S0vMPScDM", url);
+        let response: SearchResult = serde_json::from_str(reqwest::get(search_string.as_str())?.text()?.as_str())?;
+        url = format!("https://www.youtube.com/watch?v={}", response.items[0].id.video_id);
     }
 
     let guild_id = match CACHE.read().guild_channel(msg.channel_id) {
@@ -303,4 +314,3 @@ fn check_msg(result: SerenityResult<Message>) {
         println!("Error sending message: {:?}", why);
     }
 }
-
